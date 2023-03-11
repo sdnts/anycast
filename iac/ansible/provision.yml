@@ -1,0 +1,10 @@
+# Do not run outside of Terraform!
+# This requires secrets that only Terraform knows about
+---
+- hosts: all
+  become: yes
+  tasks:
+    - import_tasks: tasks/linux.yml
+    - import_tasks: tasks/ufw.yml
+    - import_tasks: tasks/telegraf.yml
+    - import_tasks: tasks/echo.yml

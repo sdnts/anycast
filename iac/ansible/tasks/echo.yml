@@ -1,0 +1,20 @@
+---
+- name: Install echo service
+  copy:
+    dest: /etc/systemd/system/echo.service
+    content: |
+      [Unit]
+      Description=Echo
+      After=network.target
+
+      [Install]
+      WantedBy=multi-user.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/local/bin/echo
+      Restart=always
+      RestartSec=5
+      StandardOutput=syslog
+      StandardError=syslog
+      SyslogIdentifier=%n

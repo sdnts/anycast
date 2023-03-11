@@ -1,0 +1,34 @@
+---
+- name: Configure ufw (SSH)
+  community.general.ufw:
+    rule: limit
+    proto: tcp
+    port: ssh
+
+- name: Configure ufw (HTTP)
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    port: http
+
+- name: Configure ufw (Echo)
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    port: "7096"
+
+- name: Forward port 80:7096
+  blockinfile:
+    state: present
+    path: /etc/ufw/before.rules
+    insertbefore: BOF
+    block: |
+      *nat
+      :PREROUTING ACCEPT [0:0]
+
+      -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 7096
+      COMMIT
+
+- name: Start ufw
+  community.general.ufw:
+    state: enabled

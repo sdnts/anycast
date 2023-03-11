@@ -1,0 +1,55 @@
+---
+- name: System update
+  apt:
+    update_cache: true
+    upgrade: "dist"
+
+- name: Install packages
+  apt:
+    state: present
+    package:
+      - psmisc
+      - lsof
+      - unattended-upgrades
+      - fail2ban
+      - ufw
+      - vim
+
+- name: Enable unattended-upgrades
+  command:
+    cmd: dpkg-reconfigure -f noninteractive --priority=low unattended-upgrades
+    creates: /etc/apt/apt.conf.d/20auto-upgrades
+
+- name: Configure fail2ban
+  lineinfile:
+    state: present
+    create: true
+    path: /etc/fail2ban/jail.local
+    line: |
+      [sshd]
+      enabled   = true
+      banaction = iptables-multiport
+
+- name: Enable fail2ban
+  systemd:
+    state: started
+    name: fail2ban
+    enabled: true
+
+- name: Configure SSH
+  copy:
+    dest: /etc/ssh/sshd_config
+    content: |
+      Include /etc/ssh/sshd_config.d/*.conf
+      PermitRootLogin        prohibit-password
+      PasswordAuthentication no
+      PubkeyAuthentication   yes
+      AllowUsers             root
+      X11Forwarding          no
+      AcceptEnv              LANG LC_*
+      Subsystem	             sftp	/usr/lib/openssh/sftp-server
+
+- name: Restart sshd
+  service:
+    name: sshd
+    state: restarted

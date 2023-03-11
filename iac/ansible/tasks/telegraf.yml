@@ -1,0 +1,70 @@
+---
+- name: Download InfluxData GPG key
+  shell: >
+    wget -q https://repos.influxdata.com/influxdata-archive_compat.key &&
+    cat influxdata-archive_compat.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg &&
+    rm -rf influxdata-archive_compat.key
+  args:
+    creates: /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg
+
+- name: Add InfluxData apt source
+  apt_repository:
+    state: present
+    repo: "deb https://repos.influxdata.com/debian stable main"
+    filename: influxdata
+
+- name: apt update
+  apt:
+    state: present
+    package:
+      - telegraf
+
+- name: Create telegraf config
+  copy:
+    dest: /etc/telegraf/telegraf.conf
+    content: |
+      [global_tags]
+        bucket = "echo"
+
+      [agent]
+        interval = "10s"
+        round_interval = true
+        metric_batch_size = 1000
+        metric_buffer_limit = 10000
+        collection_jitter = "10s"
+        flush_interval = "10s"
+        flush_jitter = "0s"
+        precision = "0ms"
+
+      [[inputs.cpu]]
+        percpu = true
+        totalcpu = true
+        collect_cpu_time = true
+        report_active = false
+        core_tags = false
+
+      [[inputs.mem]]
+
+      [[inputs.disk]]
+        ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
+
+      [[inputs.diskio]]
+
+      [[inputs.systemd_units]]
+        timeout = "1s"
+        unittype = "service"
+        pattern = "echo*"
+
+      [[outputs.http]]
+        url = "https://telegraf.sdnts.dev/api/v2/write"
+        data_format = "influx"
+        [outputs.http.headers]
+          CF-Access-Client-Id = "{{ lookup('ansible.builtin.env', 'ECHO_CF_access_client_id') | quote }}"
+          CF-Access-Client-Secret = "{{ lookup('ansible.builtin.env', 'ECHO_CF_access_client_secret') | quote }}"
+
+- name: Start telegraf
+  systemd:
+    name: telegraf
+    state: restarted
+    enabled: true
+    masked: no

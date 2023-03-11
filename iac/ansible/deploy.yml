@@ -1,0 +1,20 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Copy server executable
+      copy:
+        src: echo # Make sure this executable exists in the `ansible` folder
+        dest: /usr/local/bin/echo
+        mode: 0777
+
+    - name: Start server
+      systemd:
+        name: echo
+        state: restarted
+        enabled: true
+        masked: no
+
+    - name: Reload ufw
+      community.general.ufw:
+        state: reloaded
