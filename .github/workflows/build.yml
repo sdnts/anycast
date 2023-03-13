@@ -11,5 +11,5 @@ jobs:
       - run: cargo build --release --target x86_64-unknown-linux-musl
       - uses: actions/upload-artifact@v3
         with:
-          name: anycast
-          path: target/x86_64-unknown-linux-musl/release/anycast
+          name: echo
+          path: target/x86_64-unknown-linux-musl/release/echo
